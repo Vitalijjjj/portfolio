@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>DD-portfolio-template</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="shortcut icon" type="image/x-icon" href="images/6897080aeafbcc44460f5034_fav-icon-32.png">
+  <link rel="apple-touch-icon" href="images/6897080cafb8a1037ce13d33_fav-cion-256.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <section class="dd-hero">
+    <div class="dd-container">
+      <div class="dd-hero__wrapper">
+
+        <div class="dd-hero__profile">
+          <div class="dd-profile-card">
+            <h2 class="dd-text-24px">Про мене</h2>
+            <div class="dd-profile-card__image">
+              <img src="images/68deeef131af9e036f889106_ava-02.png" loading="lazy"
+                   sizes="(max-width: 1080px) 100vw, 1080px"
+                   srcset="images/68deeef131af9e036f889106_ava-02-p-500.png 500w, images/68deeef131af9e036f889106_ava-02-p-800.png 800w, images/68deeef131af9e036f889106_ava-02.png 1080w"
+                   alt="" class="dd-image-cover">
+            </div>
+            <p class="dd-code">
+              {<br>
+                <span class="dd-text-gray">name:</span> "Андрій",<br>
+                <span class="dd-text-gray">role:</span> "Дизайн-інженер",<br>
+                <span class="dd-text-gray">projects:</span> "100+",<br>
+                <span class="dd-text-gray">"experience-years":</span> 4<br>
+              }
+            </p>
+          </div>
+        </div>
+
+        <div class="dd-hero__content">
+
+          <div class="dd-works">
+            <h2 class="dd-text-24px">Вибрані роботи</h2>
+            <div class="dd-works__list" id="projects-grid"></div>
+          </div>
+
+          <div class="dd-info">
+            <article class="dd-info__col">
+              <h2 class="dd-text-24px">Послуги</h2>
+              <div class="dd-info__col-list">
+                <article class="dd-info__cell"><div class="dd-button-text">Вебдизайн</div></article>
+                <article class="dd-info__cell"><div class="dd-button-text">Розробка на Webflow</div></article>
+                <article class="dd-info__cell"><div class="dd-button-text">Консультації</div></article>
+              </div>
+            </article>
+            <article class="dd-info__col">
+              <h2 class="dd-text-24px">Стек</h2>
+              <div class="dd-info__col-list">
+                <article class="dd-info__cell"><div class="dd-button-text">Webflow</div></article>
+                <article class="dd-info__cell"><div class="dd-button-text">Figma</div></article>
+                <article class="dd-info__cell"><div class="dd-button-text">Gsap</div></article>
+                <article class="dd-info__cell"><div class="dd-button-text">Кастомний код</div></article>
+                <article class="dd-info__cell"><div class="dd-button-text">Lottie</div></article>
+                <article class="dd-info__cell"><div class="dd-button-text">Інтеграції (Zapier, Make, n8n)</div></article>
+              </div>
+            </article>
+          </div>
+
+          <div class="dd-cta-anchor">
+            <div class="dd-cta-anchor__content">
+              <h2 dd-el="cta-title" class="dd-text-48px">Шукаєте професіонала, який перетворить ваші ідеї на реальні результати й допоможе вашому бізнесу зрости?</h2>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dd-cta">
+    <div class="dd-container is--cta">
+      <div class="dd-cta__wrapper">
+        <div class="dd-cta__left"></div>
+        <div class="dd-cta__content">
+          <h2 dd-el="cta-el" class="dd-text-48px">Перевірте вільні слоти на проєкти цього місяця</h2>
+          <a dd-el="cta-el" href="https://t.me/sivuraimo" target="_blank" class="dd-button">
+            <div class="dd-button-text">Написати в Telegram</div>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="dd-cta__bg">
+      <div class="dd-cta__bg-box"></div>
+      <div class="dd-cta__bg-box"></div>
+      <div class="dd-cta__bg-box"></div>
+      <div class="dd-cta__bg-box"></div>
+      <div class="dd-cta__bg-box"></div>
+      <div class="dd-cta__bg-box"></div>
+    </div>
+  </section>
+
+  <script src="js/gsap.min.js"></script>
+  <script src="js/ScrollTrigger.min.js"></script>
+  <script src="js/SplitText.min.js"></script>
+  <script src="js/projects.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
