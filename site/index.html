@@ -69,9 +69,59 @@
             <article class="dd-info__col">
               <h2 class="dd-text-24px">Послуги</h2>
               <div class="dd-info__col-list">
-                <article class="dd-info__cell"><div class="dd-button-text">Вебдизайн</div></article>
-                <article class="dd-info__cell"><div class="dd-button-text">Розробка на Webflow</div></article>
-                <article class="dd-info__cell"><div class="dd-button-text">Консультації</div></article>
+
+                <article class="dd-info__cell dd-service">
+                  <div class="dd-button-text dd-service__title">
+                    <span class="dd-service__num">(001)</span>
+                    Сайти під ключ
+                    <span class="dd-service__price">/ від 250$</span>
+                  </div>
+                  <div class="dd-service__tags">
+                    <span class="dd-service__tag">Дизайн</span>
+                    <span class="dd-service__sep">+</span>
+                    <span class="dd-service__tag">WordPress</span>
+                    <span class="dd-service__sep">або</span>
+                    <span class="dd-service__tag">Webflow</span>
+                  </div>
+                </article>
+
+                <article class="dd-info__cell dd-service">
+                  <div class="dd-button-text dd-service__title">
+                    <span class="dd-service__num">(002)</span>
+                    Дизайн
+                  </div>
+                  <div class="dd-service__tags">
+                    <span class="dd-service__tag">UI/UX Design</span>
+                    <span class="dd-service__tag">Дизайн сайту</span>
+                    <span class="dd-service__tag">Графічний дизайн</span>
+                    <span class="dd-service__tag">Брендинг</span>
+                  </div>
+                </article>
+
+                <article class="dd-info__cell dd-service">
+                  <div class="dd-button-text dd-service__title">
+                    <span class="dd-service__num">(003)</span>
+                    Просування
+                  </div>
+                  <div class="dd-service__tags">
+                    <span class="dd-service__tag">SEO</span>
+                    <span class="dd-service__tag">Google Ads</span>
+                    <span class="dd-service__tag">Facebook Ads</span>
+                    <span class="dd-service__tag">Instagram Ads</span>
+                  </div>
+                </article>
+
+                <article class="dd-info__cell dd-service">
+                  <div class="dd-button-text dd-service__title">
+                    <span class="dd-service__num">(004)</span>
+                    Кодові рішення
+                  </div>
+                  <div class="dd-service__tags">
+                    <span class="dd-service__tag">Web-платформи</span>
+                    <span class="dd-service__tag">Мобільні додатки</span>
+                  </div>
+                </article>
+
               </div>
             </article>
           </div>
@@ -109,11 +159,40 @@
     </div>
   </section>
 
+  <nav class="dd-dock" aria-label="Швидкі дії">
+    <button type="button" class="dd-dock__cta" id="lead-open">Залишити заявку</button>
+    <a href="https://t.me/sivuraimo" target="_blank" rel="noopener noreferrer" class="dd-dock__icon" aria-label="Telegram">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.6c.3-1.2-.9-2.2-2-1.7L2.7 9.6c-1.2.5-1.1 2.2.1 2.6l4.4 1.4 1.7 5.3c.3 1 1.6 1.3 2.4.5l2.4-2.4 4.5 3.3c.9.6 2.1.2 2.4-.9l3.3-14.8zM8.5 13.2l9.1-5.7c.2-.1.4.1.2.3l-7.5 6.9c-.2.2-.4.5-.4.8l-.3 2.3c0 .3-.5.4-.6.1l-1.2-4c-.1-.3 0-.6.7-.7z"/></svg>
+    </a>
+    <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" class="dd-dock__icon" aria-label="Instagram">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor" stroke="none"/></svg>
+    </a>
+  </nav>
+
+  <div class="dd-modal" id="lead-modal" role="dialog" aria-modal="true" aria-labelledby="lead-modal-title" hidden>
+    <div class="dd-modal__backdrop" data-modal-close></div>
+    <div class="dd-modal__card">
+      <button type="button" class="dd-modal__close" data-modal-close aria-label="Закрити">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <h2 id="lead-modal-title" class="dd-text-24px">Залишити заявку</h2>
+      <p class="dd-modal__note">Заповніть форму — ми зв'яжемось із вами найближчим часом.</p>
+      <form id="lead-form" class="dd-modal__form" novalidate>
+        <input class="dd-modal__field" type="text" name="name" required autocomplete="name" placeholder="Ваше ім'я">
+        <input class="dd-modal__field" type="text" name="contact" required placeholder="Телефон або Telegram">
+        <textarea class="dd-modal__field" name="message" rows="4" placeholder="Коротко про ваш проєкт"></textarea>
+        <button type="submit" class="dd-modal__submit">Надіслати</button>
+        <p class="dd-modal__status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+
   <script src="js/gsap.min.js"></script>
   <script src="js/ScrollTrigger.min.js"></script>
   <script src="js/SplitText.min.js"></script>
   <script src="js/lenis.min.js"></script>
   <script src="js/projects.js"></script>
+  <script src="js/lead-modal.js"></script>
   <script src="js/main.js"></script>
 
 </body>
