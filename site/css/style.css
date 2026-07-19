@@ -334,6 +334,61 @@ img {
   display: flex;
 }
 
+/* ---- Founders card stack ---- */
+/* The second card is absolutely stacked over the first and slides up
+   (ScrollTrigger scrub in main.js). overflow: hidden clips it while parked
+   below, so it wipes in from the bottom edge of the stack. */
+
+.dd-profile-stack-zone {
+  width: 100%;
+}
+
+.dd-profile-stack {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.dd-profile-card--overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  /* parked below via GSAP (yPercent: 110) — no CSS transform here,
+     it would stack with GSAP's own transform and double the offset */
+  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.2);
+  will-change: transform;
+}
+
+/* Mobile: the profile column is static, so the stack gets its own sticky
+   zone. The spacer must be real content (::after), not padding — sticky
+   elements can only travel within the parent's content box. */
+@media (max-width: 767px) {
+  .dd-profile-stack-zone::after {
+    content: "";
+    display: block;
+    height: 85vh;
+  }
+
+  .dd-profile-stack-sticky {
+    position: sticky;
+    top: 1.25rem;
+  }
+}
+
+/* Reduced motion: no overlap effect, cards stack vertically */
+@media (prefers-reduced-motion: reduce) {
+  .dd-profile-card--overlay {
+    position: static;
+    transform: none;
+    box-shadow: none;
+    margin-top: 1.25rem;
+  }
+
+  .dd-profile-stack-zone::after {
+    content: none;
+  }
+}
+
 .dd-profile-card__image {
   aspect-ratio: 1;
   width: 100%;
@@ -371,6 +426,100 @@ img {
   grid-auto-columns: 1fr;
   width: 100%;
   display: grid;
+}
+
+/* ---- Category tabs (sticky) ---- */
+
+/* Sticky range is bounded by .dd-works (its parent), so the panel
+   unsticks and leaves together with the section. The site has no
+   fixed header — --header-height defaults to 0. */
+.featured-works__tabs-wrapper {
+  position: sticky;
+  top: var(--header-height, 0px);
+  z-index: 30;
+  background-color: rgba(246, 246, 246, 0.96);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 0.625rem 0;
+}
+
+.featured-works__tabs {
+  display: flex;
+  gap: 0.625rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  white-space: nowrap;
+}
+
+.featured-works__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.featured-works__tab {
+  font: inherit;
+  color: var(--colors--black);
+  background-color: var(--colors--white);
+  border: 1px solid var(--colors--light-gray-50);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  flex: none;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+@media (hover: hover) {
+  .featured-works__tab:not(.is-active):hover {
+    opacity: 0.7;
+  }
+}
+
+.featured-works__tab.is-active {
+  background-color: var(--colors--black);
+  border-color: var(--colors--black);
+  color: var(--colors--white);
+}
+
+.featured-works__tab:focus-visible {
+  outline: 2px solid var(--colors--black);
+  outline-offset: 2px;
+}
+
+.featured-works__list-anchor {
+  height: 0;
+}
+
+.featured-works__empty {
+  color: var(--colors--gray);
+  line-height: 1.4;
+}
+
+/* Category switch animation */
+.dd-works__list .project-card {
+  transition:
+    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dd-works__list.is-leaving .project-card {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.project-card.is-entering {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dd-works__list .project-card {
+    transition: opacity 0.3s ease;
+  }
+
+  .dd-works__list.is-leaving .project-card,
+  .project-card.is-entering {
+    transform: none;
+  }
 }
 
 /* ---- Project card ---- */

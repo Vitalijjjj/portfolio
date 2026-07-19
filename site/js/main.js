@@ -1,5 +1,22 @@
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
+/* ============ Lenis: inertial smooth scroll ============ */
+/* Keeps native scroll position (sticky elements and IntersectionObserver
+   keep working). Not initialized when the user prefers reduced motion. */
+
+if (typeof Lenis !== "undefined" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  const lenis = new Lenis({
+    duration: 1.1,
+    smoothWheel: true
+  });
+
+  lenis.on("scroll", ScrollTrigger.update);
+  gsap.ticker.add(time => lenis.raf(time * 1000));
+  gsap.ticker.lagSmoothing(0);
+
+  window.lenis = lenis;
+}
+
 /* ============ CTA title: line-mask reveal, scrubbed by scroll ============ */
 
 function splitWithMasks(container) {
@@ -88,4 +105,44 @@ document.addEventListener("DOMContentLoaded", function () {
       ctaTl.reverse();
     }
   });
+
+  /* ============ Founders card stack ============ */
+
+  const stack = document.querySelector(".dd-profile-stack");
+  if (stack && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const overlay = stack.querySelector(".dd-profile-card--overlay");
+    const base = stack.querySelector(".dd-profile-card:not(.dd-profile-card--overlay)");
+
+    const buildStackTl = scrollTrigger =>
+      gsap.timeline({ scrollTrigger })
+        .fromTo(overlay, { yPercent: 110 }, { yPercent: 0, ease: "none" }, 0)
+        .to(base, { scale: 0.965, yPercent: -1.5, ease: "none" }, 0);
+
+    const mmStack = gsap.matchMedia();
+
+    // Desktop: the profile column is sticky for the whole hero —
+    // the overlay completes during the first ~70vh of page scroll
+    mmStack.add("(min-width: 768px)", () => {
+      buildStackTl({
+        trigger: ".dd-hero",
+        start: "top top",
+        end: "+=70%",
+        scrub: 0.6
+      });
+    });
+
+    // Mobile: the stack pins inside its own zone; the effect is scrubbed
+    // over the zone's extra scroll distance
+    mmStack.add("(max-width: 767px)", () => {
+      const zone = document.querySelector(".dd-profile-stack-zone");
+      const sticky = document.querySelector(".dd-profile-stack-sticky");
+      buildStackTl({
+        trigger: zone,
+        start: () => "top " + (parseFloat(getComputedStyle(sticky).top) || 0),
+        end: () => "+=" + (zone.offsetHeight - sticky.offsetHeight),
+        scrub: 0.6,
+        invalidateOnRefresh: true
+      });
+    });
+  }
 });
