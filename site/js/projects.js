@@ -299,6 +299,58 @@
     grid.setAttribute("aria-labelledby", "works-tab-" + activeCategory);
   }
 
+  /* ---------- підказка «стрічку можна гортати» ---------- */
+
+  const HINT_KEY = "dd-tabs-hinted";
+
+  function overflows() {
+    return tabsEl.scrollWidth - tabsEl.clientWidth > 4;
+  }
+
+  // Згасання країв показує, з якого боку є ще таби
+  function updateEdges() {
+    const max = tabsEl.scrollWidth - tabsEl.clientWidth;
+    tabsEl.classList.toggle("has-start", max > 4 && tabsEl.scrollLeft > 4);
+    tabsEl.classList.toggle("has-end", max > 4 && tabsEl.scrollLeft < max - 4);
+  }
+
+  tabsEl.addEventListener("scroll", updateEdges, { passive: true });
+  window.addEventListener("resize", updateEdges, { passive: true });
+  cleanupFns.push(() => {
+    tabsEl.removeEventListener("scroll", updateEdges);
+    window.removeEventListener("resize", updateEdges);
+  });
+
+  // Короткий «поштовх»: стрічка від'їжджає й повертається — жест зрозумілий
+  // без тексту. Один раз за сесію, тільки якщо таби справді не влазять.
+  function nudgeOnce() {
+    if (!overflows() || reducedMotion || !window.gsap) return;
+    try {
+      if (sessionStorage.getItem(HINT_KEY) === "1") return;
+      sessionStorage.setItem(HINT_KEY, "1");
+    } catch (e) { /* приватний режим — покажемо підказку, це не критично */ }
+
+    const proxy = { x: tabsEl.scrollLeft };
+    const apply = () => { tabsEl.scrollLeft = proxy.x; };
+
+    window.gsap.timeline({ delay: 0.35 })
+      .to(proxy, { x: proxy.x + 52, duration: 0.55, ease: "power2.inOut", onUpdate: apply })
+      .to(proxy, { x: proxy.x, duration: 0.7, ease: "power2.inOut", onUpdate: apply }, "+=0.12");
+  }
+
+  // Чекаємо, доки таби реально потраплять на екран
+  function watchForHint() {
+    if (!("IntersectionObserver" in window)) return;
+    const io = new IntersectionObserver(entries => {
+      if (entries.some(e => e.isIntersecting)) {
+        io.disconnect();
+        nudgeOnce();
+      }
+    }, { threshold: 0.9 });
+    io.observe(tabsEl);
+    cleanupFns.push(() => io.disconnect());
+  }
+
   // Horizontal-only scroll of the tab strip (never scrolls the page vertically)
   function revealActiveTab() {
     const btn = tabButtons.get(activeCategory);
@@ -308,6 +360,7 @@
       left: Math.max(0, target),
       behavior: reducedMotion ? "auto" : "smooth"
     });
+    updateEdges();
   }
 
   /* ---------- scroll to the start of the list ---------- */
@@ -381,6 +434,13 @@
 
   updateTabsUI();
   revealActiveTab();
+  updateEdges();
+  // Підказку показуємо після прелоадера — інакше вона програється «в нікуди»
+  if (document.documentElement.classList.contains("pl-active")) {
+    document.addEventListener("preloader:complete", watchForHint, { once: true });
+  } else {
+    watchForHint();
+  }
   renderCards(activeCategory, false); // skeleton, поки їдуть дані
 
   const applyCases = list => {

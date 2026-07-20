@@ -444,6 +444,20 @@ img {
   padding: 0.625rem 0;
 }
 
+/* Реєстрація дозволяє плавно анімувати згасання країв.
+   Там, де @property не підтримується, край просто перемикається миттєво. */
+@property --fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 .featured-works__tabs {
   display: flex;
   gap: 0.625rem;
@@ -451,6 +465,33 @@ img {
   overscroll-behavior-x: contain;
   scrollbar-width: none;
   white-space: nowrap;
+  /* Край згасає, коли за ним є ще таби — підказка, що стрічку можна гортати.
+     Маска на контейнері: не рухається разом із вмістом. */
+  --fade-start: 0px;
+  --fade-end: 0px;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 var(--fade-start),
+    #000 calc(100% - var(--fade-end)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 var(--fade-start),
+    #000 calc(100% - var(--fade-end)),
+    transparent 100%
+  );
+  transition: --fade-start 0.3s ease, --fade-end 0.3s ease;
+}
+
+.featured-works__tabs.has-start {
+  --fade-start: 1.75rem;
+}
+
+.featured-works__tabs.has-end {
+  --fade-end: 1.75rem;
 }
 
 .featured-works__tabs::-webkit-scrollbar {
