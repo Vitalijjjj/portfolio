@@ -286,8 +286,12 @@ function buildScene(canvas) {
   const scene = new THREE.Scene();
 
   // Мінімальна перспектива — архітектурний, не «риб'яче око»
+  // Один fov для всіх екранів — характер перспективи однаковий скрізь,
+  // а різницю пропорцій компенсує автоматичне кадрування (frameDistance).
+  const FOV = 28;
+
   const camera = new THREE.PerspectiveCamera(
-    isMobile ? 34 : 28,
+    FOV,
     window.innerWidth / window.innerHeight,
     0.1,
     100
@@ -296,11 +300,12 @@ function buildScene(canvas) {
   const group = new THREE.Group();
   scene.add(group);
 
-  // Розміри площин
+  // Розміри площин однакові на всіх екранах — композиція має читатися
+  // так само; під розмір екрана підлаштовується лише камера.
   const W = 3;
   const H = 3;
-  const D_BOTTOM = isMobile ? 2.1 : 2.6;
-  const D_TOP = isMobile ? 1.7 : 2.2;
+  const D_BOTTOM = 2.6;
+  const D_TOP = 2.2;
 
   const planes = [];
 
@@ -355,23 +360,44 @@ function buildScene(canvas) {
   shadow.position.set(0, -H / 2 - 0.02, D_BOTTOM * 0.35);
   group.add(shadow);
 
+  /* Автоматичне кадрування.
+     Габарити розгорнутої конструкції у світових одиницях:
+       по висоті — від підлоги (-H/2) до верхнього краю нахиленої верхньої площини;
+       по ширині — W плюс приріст від повороту камери та винесеної вперед підлоги.
+     Дистанція береться як максимум із двох вимог (вписати по висоті / по ширині),
+     тож на портретному екрані камера від'їжджає рівно настільки, скільки треба. */
+  const OPEN_TOP_ANGLE = 0.70;
+  const compTop = H / 2 + D_TOP * Math.cos(OPEN_TOP_ANGLE);
+  const compBottom = -H / 2;
+  const compH = compTop - compBottom;
+  const compW = W * Math.cos(0.34) + D_BOTTOM * Math.sin(0.34); // з урахуванням оберту
+  const compCenterY = (compTop + compBottom) / 2;
+
+  const FILL_V = 0.55; // яку частку висоти кадру займає композиція
+  const FILL_H = 0.70; // ...і ширини
+
+  function frameDistance() {
+    const aspect = window.innerWidth / window.innerHeight;
+    const k = 2 * Math.tan((FOV * Math.PI) / 180 / 2);
+    return Math.max(compH / (k * FILL_V), compW / (k * aspect * FILL_H));
+  }
+
   // Камера на сфері навколо композиції
-  const cam = { radius: isMobile ? 15.4 : 18.7, theta: -0.34, phi: 0.30, targetY: -0.15 };
+  const cam = {
+    radius: frameDistance(),
+    theta: -0.34,
+    phi: 0.30,
+    targetY: compCenterY * 0.8 // трохи нижче геометричного центру: підлога «важча»
+  };
 
   function updateCamera() {
     camera.position.set(
       cam.radius * Math.sin(cam.theta) * Math.cos(cam.phi),
-      cam.radius * Math.sin(cam.phi),
+      cam.radius * Math.sin(cam.phi) + cam.targetY,
       cam.radius * Math.cos(cam.theta) * Math.cos(cam.phi)
     );
     camera.lookAt(0, cam.targetY, 0);
   }
-  updateCamera();
-
-  // На вузьких екранах відсуваємо камеру, щоб композиція влізла.
-  // Робимо це один раз на старті: під час показу radius анімує GSAP,
-  // тож перезапис у resize зламав би рух камери.
-  if (window.innerWidth / window.innerHeight < 0.9) cam.radius *= 1.18;
   updateCamera();
 
   function resize() {
@@ -452,7 +478,7 @@ function buildTimeline(ctx, textures) {
   planes.forEach(p => gsap.set(p.edges.material, { opacity: 0 }));
 
   const OPEN_BOTTOM = -Math.PI / 2;   // нижня лягає вперед
-  const OPEN_TOP = 0.70;              // верхня нависає вперед-угору (≈40°)
+  const OPEN_TOP = 0.70;              // верхня нависає вперед-угору (≈40°), збігається з OPEN_TOP_ANGLE у buildScene
 
   const tl = gsap.timeline({
     defaults: { ease: "power3.out" },
@@ -470,7 +496,7 @@ function buildTimeline(ctx, textures) {
     .to(shadow.material, { opacity: 1, duration: 0.8 }, 0.35)
     .to(planes.map(p => p.edges.material), { opacity: 0.18, duration: 0.6, stagger: 0.06 }, 0.3)
     // делікатний zoom-in камери
-    .to(cam, { radius: cam.radius - 1.5, duration: T.assemble + 0.4, ease: "power2.out" }, 0)
+    .to(cam, { radius: cam.radius * 0.93, duration: T.assemble + 0.4, ease: "power2.out" }, 0)
     .to(".pl__meta", { opacity: 1, duration: 0.5 }, 0.55)
     .to(".pl__progress", { opacity: 1, duration: 0.5 }, 0.55);
 
@@ -548,7 +574,7 @@ function buildTimeline(ctx, textures) {
       { x: 0.82, y: 0.56, duration: T.collapse * 0.7, ease: "power3.inOut" }, collapseAt + 0.3)
     // камера вирівнюється фронтально
     .to(cam,
-      { theta: 0, phi: 0.02, radius: cam.radius - 4.2, targetY: 0, duration: T.collapse, ease: "power3.inOut" }, collapseAt)
+      { theta: 0, phi: 0.02, radius: cam.radius * 0.78, targetY: 0, duration: T.collapse, ease: "power3.inOut" }, collapseAt)
     .to(planes.map(p => p.edges.material), { opacity: 0, duration: 0.4 }, collapseAt + 0.3)
     .to(shadow.material, { opacity: 0.55, duration: 0.6 }, collapseAt + 0.4)
     .to([".pl__meta", ".pl__progress"], { opacity: 0, duration: 0.35 }, collapseAt);
