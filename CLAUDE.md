@@ -4,7 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-A single-page portfolio website exported from Webflow, located entirely in `Portfolio Template Webflow/`. It is pure static HTML/CSS/JS — there is no package.json, build step, linter, or test suite.
+A portfolio website in `site/` (clean static HTML/CSS/JS, no build step) plus the original Webflow export kept as reference in `Portfolio Template Webflow/`. Deployed on Vercel (`vercel.json` sets `outputDirectory: site`). There is no package.json, build step, linter, or test suite.
+
+Key parts of `site/`:
+- `index.html` + `css/style.css` + `js/main.js` — public page: Lenis smooth scroll, GSAP ScrollTrigger animations (CTA reveal, founders card stack), sticky category tabs, bottom dock with lead-form modal (`js/lead-modal.js`, FormSubmit).
+- `js/projects.js` — case cards: rendering, category tabs, desktop hover video, mobile center-of-viewport activation via IntersectionObserver.
+- `js/cases-service.js` — data/service layer for cases with two drivers behind one interface: Supabase (when `js/supabase-config.js` has url+anonKey; public page reads via REST, admin uses the vendored SDK `js/vendor/supabase.js`) or a localStorage demo driver. Also holds `FALLBACK_CASES` used when the backend is unreachable.
+- `admin/` — dark-themed admin panel (`/admin/`) for CRUD of cases: auth, uploads to Supabase Storage, drag-and-drop ordering, live card preview. Setup instructions in `ADMIN.md`, SQL schema + RLS policies in `supabase/schema.sql`. Demo-mode login: admin@demo.local / admin123.
 
 ## Running the site
 

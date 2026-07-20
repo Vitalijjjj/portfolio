@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>Адмінка — кейси</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="shortcut icon" type="image/x-icon" href="../images/6897080aeafbcc44460f5034_fav-icon-32.png">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <header class="adm-header">
+    <div class="adm-header__inner">
+      <a href="../" class="adm-logo">← На сайт</a>
+      <div class="adm-header__title">Керування кейсами</div>
+      <div class="adm-header__right">
+        <span class="adm-badge" id="mode-badge"></span>
+        <span class="adm-user" id="user-email" hidden></span>
+        <button type="button" class="adm-btn adm-btn--ghost" id="logout-btn" hidden>Вийти</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="adm-main">
+
+    <!-- ВХІД -->
+    <section class="adm-view" id="view-login" hidden>
+      <form class="adm-login" id="login-form" novalidate>
+        <h1 class="adm-h1">Вхід в адмінку</h1>
+        <p class="adm-note" id="demo-hint" hidden></p>
+        <label class="adm-label" for="login-email">Email</label>
+        <input class="adm-field" type="email" id="login-email" name="email" autocomplete="username" required>
+        <label class="adm-label" for="login-password">Пароль</label>
+        <input class="adm-field" type="password" id="login-password" name="password" autocomplete="current-password" required>
+        <p class="adm-error" id="login-error" hidden></p>
+        <button type="submit" class="adm-btn adm-btn--primary adm-btn--wide" id="login-submit">Увійти</button>
+      </form>
+    </section>
+
+    <!-- СПИСОК -->
+    <section class="adm-view" id="view-list" hidden>
+      <div class="adm-toolbar">
+        <h1 class="adm-h1">Кейси</h1>
+        <button type="button" class="adm-btn adm-btn--primary" id="add-case-btn">Додати новий кейс</button>
+      </div>
+      <p class="adm-note">Перетягніть рядок, щоб змінити порядок у межах категорії, або скористайтесь стрілками ↑ ↓.</p>
+      <div id="list-state" class="adm-state" hidden></div>
+      <div class="adm-groups" id="case-groups"></div>
+    </section>
+
+    <!-- РЕДАКТОР -->
+    <section class="adm-view" id="view-editor" hidden>
+      <div class="adm-toolbar">
+        <h1 class="adm-h1" id="editor-title">Новий кейс</h1>
+        <button type="button" class="adm-btn adm-btn--ghost" id="back-btn">← До списку</button>
+      </div>
+
+      <div class="adm-editor">
+        <form class="adm-form" id="case-form" novalidate>
+
+          <fieldset class="adm-fieldset">
+            <legend class="adm-legend">Основна інформація</legend>
+
+            <label class="adm-label" for="f-title">Назва проєкту *</label>
+            <input class="adm-field" type="text" id="f-title" maxlength="120">
+            <p class="adm-error" data-err="title" hidden></p>
+
+            <label class="adm-label" for="f-description">Короткий опис *</label>
+            <textarea class="adm-field" id="f-description" rows="3" maxlength="300"></textarea>
+            <p class="adm-error" data-err="description" hidden></p>
+
+            <label class="adm-label" for="f-url">Посилання на сайт проєкту *</label>
+            <input class="adm-field" type="url" id="f-url" placeholder="https://example.com">
+            <p class="adm-error" data-err="websiteUrl" hidden></p>
+          </fieldset>
+
+          <fieldset class="adm-fieldset">
+            <legend class="adm-legend">Медіафайли</legend>
+
+            <label class="adm-label">Головне статичне зображення * <span class="adm-hint">JPG / PNG / WEBP</span></label>
+            <div class="adm-drop" id="drop-image" tabindex="0">
+              <input type="file" id="file-image" accept="image/jpeg,image/png,image/webp" hidden>
+              <div class="adm-drop__empty">Перетягніть файл сюди або <span class="adm-link">оберіть</span></div>
+              <div class="adm-drop__progress" hidden><div class="adm-drop__bar"></div><span class="adm-drop__pct">0%</span></div>
+              <div class="adm-drop__preview" hidden>
+                <img alt="">
+                <div class="adm-drop__actions">
+                  <button type="button" class="adm-btn adm-btn--small" data-act="replace">Замінити</button>
+                  <button type="button" class="adm-btn adm-btn--small adm-btn--danger" data-act="remove">Видалити</button>
+                </div>
+              </div>
+            </div>
+            <p class="adm-error" data-err="imageUrl" hidden></p>
+
+            <label class="adm-label">Відео для hover-ефекту <span class="adm-hint">MP4 / WEBM, необов'язково</span></label>
+            <div class="adm-drop" id="drop-video" tabindex="0">
+              <input type="file" id="file-video" accept="video/mp4,video/webm" hidden>
+              <div class="adm-drop__empty">Перетягніть файл сюди або <span class="adm-link">оберіть</span></div>
+              <div class="adm-drop__progress" hidden><div class="adm-drop__bar"></div><span class="adm-drop__pct">0%</span></div>
+              <div class="adm-drop__preview" hidden>
+                <video muted loop playsinline></video>
+                <div class="adm-drop__actions">
+                  <button type="button" class="adm-btn adm-btn--small" data-act="replace">Замінити</button>
+                  <button type="button" class="adm-btn adm-btn--small adm-btn--danger" data-act="remove">Видалити</button>
+                </div>
+              </div>
+            </div>
+            <p class="adm-error" data-err="videoUrl" hidden></p>
+          </fieldset>
+
+          <fieldset class="adm-fieldset">
+            <legend class="adm-legend">Налаштування</legend>
+
+            <div class="adm-row">
+              <div>
+                <label class="adm-label" for="f-category">Категорія</label>
+                <select class="adm-field" id="f-category">
+                  <option value="websites">Сайти</option>
+                  <option value="ecommerce">Інтернет-магазини</option>
+                  <option value="ai-site">Сайти за 200€</option>
+                </select>
+              </div>
+              <div>
+                <label class="adm-label" for="f-order">Порядок відображення</label>
+                <input class="adm-field" type="number" id="f-order" min="1" step="1" value="1">
+                <p class="adm-error" data-err="orderIndex" hidden></p>
+              </div>
+            </div>
+
+            <div class="adm-row">
+              <div>
+                <label class="adm-label" for="f-status">Статус</label>
+                <select class="adm-field" id="f-status">
+                  <option value="draft">Чернетка</option>
+                  <option value="published">Опублікований</option>
+                </select>
+              </div>
+              <div class="adm-check-wrap">
+                <label class="adm-check">
+                  <input type="checkbox" id="f-newtab" checked>
+                  <span>Відкривати посилання у новій вкладці</span>
+                </label>
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="adm-form__footer">
+            <button type="submit" class="adm-btn adm-btn--primary" id="save-btn">Зберегти</button>
+            <button type="button" class="adm-btn adm-btn--ghost" id="cancel-btn">Скасувати</button>
+          </div>
+        </form>
+
+        <!-- ПОПЕРЕДНІЙ ПЕРЕГЛЯД -->
+        <aside class="adm-preview">
+          <div class="adm-legend">Попередній перегляд</div>
+          <p class="adm-note">Наведіть курсор на медіа, щоб перевірити hover-відео.</p>
+          <div class="pv-stage">
+            <article class="pv-card">
+              <a class="pv-media" id="pv-link" href="#" target="_blank" rel="noopener noreferrer">
+                <img class="pv-image" id="pv-image" alt="" hidden>
+                <video class="pv-video" id="pv-video" muted loop playsinline hidden></video>
+                <span class="pv-arrow" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M17 7H8M17 7V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="pv-placeholder" id="pv-placeholder">Додайте зображення</span>
+              </a>
+              <div class="pv-content">
+                <h3 class="pv-title" id="pv-title">Назва проєкту</h3>
+                <p class="pv-desc" id="pv-desc">Короткий опис</p>
+              </div>
+            </article>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <!-- Підтвердження -->
+  <div class="adm-modal" id="confirm-modal" role="dialog" aria-modal="true" hidden>
+    <div class="adm-modal__backdrop"></div>
+    <div class="adm-modal__card">
+      <p class="adm-modal__text" id="confirm-text"></p>
+      <div class="adm-modal__actions">
+        <button type="button" class="adm-btn adm-btn--danger" id="confirm-yes">Так, видалити</button>
+        <button type="button" class="adm-btn adm-btn--ghost" id="confirm-no">Скасувати</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="adm-toasts" id="toasts" aria-live="polite"></div>
+
+  <script src="../js/supabase-config.js"></script>
+  <script src="../js/vendor/supabase.js"></script>
+  <script src="../js/cases-service.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -1,100 +1,8 @@
-/* ============ Project cases: data ============ */
-
-/*
- * ProjectCase:
- * { id, title, description, url, image, srcset?, sizes?, video,
- *   category: "websites" | "ecommerce" | "ai-site",
- *   orderIndex, status: "draft" | "published", openInNewTab }
- *
- * Category assignment below is placeholder — edit per real case.
+/* ============ Project cases: tabs, render, video control ============
+ * Дані приходять із window.CasesService (js/cases-service.js):
+ * Supabase (тільки status=published, orderIndex ASC) або демо-режим.
+ * При помилці запиту сайт відмальовує вбудований FALLBACK_CASES.
  */
-
-const CATEGORIES = [
-  { value: "websites", label: "Сайти" },
-  { value: "ecommerce", label: "Інтернет-магазини" },
-  { value: "ai-site", label: "Сайти за 200€" }
-];
-
-const DEFAULT_CATEGORY = "websites";
-
-const PROJECTS = [
-  {
-    id: "fuhrmannsoft",
-    title: "fuhrmannsoft.com",
-    description: "Дизайн і розробка сайту: від структури та макета до анімацій і запуску",
-    image: "images/fuh-poster.jpg",
-    video: "media/fuh-demo.mp4",
-    url: "https://www.fuhrmannsoft.com/",
-    category: "websites",
-    orderIndex: 1,
-    status: "published",
-    openInNewTab: true
-  },
-  {
-    id: "bluepillstudios",
-    title: "bluepillstudios.com",
-    description: "Дизайн і розробка сайту: від структури та макета до анімацій і запуску",
-    image: "images/68971152cba5d4586c0c196a_duccik-image.webp",
-    video: null,
-    url: "https://www.bluepillstudios.com/",
-    category: "websites",
-    orderIndex: 2,
-    status: "published",
-    openInNewTab: true
-  },
-  {
-    id: "europeangranite",
-    title: "europeangranitellc.com",
-    description: "Дизайн і розробка сайту: від структури та макета до анімацій і запуску",
-    image: "images/689711523762f2f611246672_granite-image.webp",
-    video: null,
-    url: "https://www.europeangranitellc.com/",
-    category: "websites",
-    orderIndex: 3,
-    status: "published",
-    openInNewTab: true
-  },
-  {
-    id: "bruitbrothers",
-    title: "bruitbrothers.com",
-    description: "Дизайн і розробка сайту: від структури та макета до анімацій і запуску",
-    image: "images/68971152916faa50ee175c3e_bruit-image.webp",
-    video: null,
-    url: "https://www.bruitbrothers.com/",
-    category: "websites",
-    orderIndex: 4,
-    status: "published",
-    openInNewTab: true
-  },
-  {
-    id: "beyondxp",
-    title: "beyondxp.in",
-    description: "Дизайн і розробка сайту: від структури та макета до анімацій і запуску",
-    image: "images/68971152ce3c415a9cd461b2_beyond-image.webp",
-    video: null,
-    url: "https://www.beyondxp.in/",
-    category: "ecommerce",
-    orderIndex: 1,
-    status: "published",
-    openInNewTab: true
-  },
-  {
-    id: "designer-diary",
-    title: "Designer Diary",
-    description: "Дизайн і розробка сайту: від структури та макета до анімацій і запуску",
-    image: "images/68deef74c00b66148e78481a_dd-cover.png",
-    srcset: "images/68deef74c00b66148e78481a_dd-cover-p-500.png 500w, images/68deef74c00b66148e78481a_dd-cover-p-800.png 800w, images/68deef74c00b66148e78481a_dd-cover.png 1080w",
-    sizes: "(max-width: 767px) 100vw, 30vw",
-    video: null,
-    url: "https://community.sivuo.com/dd",
-    category: "ai-site",
-    orderIndex: 1,
-    status: "published",
-    openInNewTab: true
-  }
-];
-
-/* ============ Project cases: tabs, render, video control ============ */
 
 (function () {
   const ARROW_SVG =
@@ -104,6 +12,14 @@ const PROJECTS = [
 
   const LEAVE_MS = 250; // must stay <= the CSS card transition duration
   const ENTER_STAGGER_MS = 40;
+  const SKELETON_COUNT = 4;
+
+  const CATEGORIES = [
+    { value: "websites", label: "Сайти" },
+    { value: "ecommerce", label: "Інтернет-магазини" },
+    { value: "ai-site", label: "Сайти за 200€" }
+  ];
+  const DEFAULT_CATEGORY = "websites";
 
   const grid = document.getElementById("projects-grid");
   const tabsEl = document.getElementById("works-tabs");
@@ -119,6 +35,7 @@ const PROJECTS = [
   let activeMedia = null;
   let activeCategory = null;
   let switching = false;
+  let allCases = null; // null = ще завантажується
 
   /* ---------- video / hover state ---------- */
 
@@ -153,7 +70,7 @@ const PROJECTS = [
 
     const media = document.createElement("a");
     media.className = "project-card__media";
-    media.href = project.url;
+    media.href = project.websiteUrl;
     media.setAttribute("aria-label", project.title);
     if (project.openInNewTab) {
       media.target = "_blank";
@@ -162,17 +79,15 @@ const PROJECTS = [
 
     const img = document.createElement("img");
     img.className = "project-card__image";
-    img.src = project.image;
+    img.src = project.imageUrl;
     img.alt = project.title;
     img.loading = "lazy";
-    if (project.srcset) img.srcset = project.srcset;
-    if (project.sizes) img.sizes = project.sizes;
     media.appendChild(img);
 
-    if (project.video) {
+    if (project.videoUrl) {
       const video = document.createElement("video");
       video.className = "project-card__video";
-      video.src = project.video;
+      video.src = project.videoUrl;
       video.muted = true;
       video.loop = true;
       video.playsInline = true;
@@ -216,9 +131,22 @@ const PROJECTS = [
     return card;
   }
 
-  // Single data source: filter by category + published, sort by orderIndex
+  function createSkeleton() {
+    const card = document.createElement("article");
+    card.className = "project-card project-card--skeleton";
+    card.innerHTML =
+      '<div class="sk sk-media"></div>' +
+      '<div class="project-card__content">' +
+      '<div class="sk sk-line sk-line--title"></div>' +
+      '<div class="sk sk-line"></div>' +
+      '<div class="sk sk-line sk-line--short"></div>' +
+      "</div>";
+    return card;
+  }
+
+  // Єдине джерело даних: фільтр за категорією і статусом, сортування за orderIndex
   function casesFor(category) {
-    return PROJECTS
+    return (allCases || [])
       .filter(p => p.status === "published" && p.category === category)
       .sort((a, b) => a.orderIndex - b.orderIndex);
   }
@@ -226,6 +154,11 @@ const PROJECTS = [
   function renderCards(category, animateIn) {
     grid.innerHTML = "";
     medias = [];
+
+    if (allCases === null) {
+      for (let i = 0; i < SKELETON_COUNT; i++) grid.appendChild(createSkeleton());
+      return;
+    }
 
     const cases = casesFor(category);
     if (!cases.length) {
@@ -431,7 +364,7 @@ const PROJECTS = [
       switching = false;
     };
 
-    if (reducedMotion) {
+    if (reducedMotion || allCases === null) {
       swap();
     } else {
       grid.classList.add("is-leaving");
@@ -448,11 +381,27 @@ const PROJECTS = [
 
   updateTabsUI();
   revealActiveTab();
-  renderCards(activeCategory, false);
-  observeCards();
+  renderCards(activeCategory, false); // skeleton, поки їдуть дані
+
+  const applyCases = list => {
+    allCases = list;
+    renderCards(activeCategory, false);
+    observeCards();
+    // висота сітки змінилась — перерахувати позиції скрол-тригерів
+    if (window.ScrollTrigger) window.ScrollTrigger.refresh();
+  };
+
+  const fallbackCases = () => window.FALLBACK_CASES.filter(c => c.status === "published");
+
+  window.CasesService.listPublished()
+    // база ще порожня (нічого не додано через адмінку) — показуємо вбудовані кейси,
+    // щойно з'явиться перший опублікований кейс, вони зникають
+    .then(list => applyCases(list && list.length ? list : fallbackCases()))
+    // бекенд недоступний — теж показуємо вбудовані
+    .catch(() => applyCases(fallbackCases()));
 
   // Teardown: disconnect observers, remove listeners, stop playback
-  window.destroyProjectCards = function () {
+  window.destroyProjectCases = window.destroyProjectCards = function () {
     cleanupFns.forEach(fn => fn());
     cleanupFns.length = 0;
     setActive(null);
