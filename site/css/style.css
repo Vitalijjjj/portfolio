@@ -1151,6 +1151,16 @@ img {
   color: var(--colors--gray);
 }
 
+/* Пастка для спам-ботів: людина цього поля не бачить */
+.dd-modal__honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .dd-modal__field:focus {
   outline: none;
   border-color: var(--colors--black);
