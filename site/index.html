@@ -6,9 +6,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="shortcut icon" type="image/x-icon" href="images/6897080aeafbcc44460f5034_fav-icon-32.png">
   <link rel="apple-touch-icon" href="images/6897080cafb8a1037ce13d33_fav-cion-256.png">
+  <link rel="stylesheet" href="css/preloader.css">
   <link rel="stylesheet" href="css/style.css">
+  <script>
+    // Вмикаємо прелоадер до першого кадру — інакше блимне контент.
+    // Один раз за сесію: на внутрішніх переходах не запускається.
+    (function () {
+      try {
+        if (sessionStorage.getItem("dd-preloader-shown") !== "1") {
+          document.documentElement.classList.add("pl-active");
+        }
+      } catch (e) {
+        document.documentElement.classList.add("pl-active");
+      }
+    })();
+  </script>
 </head>
 <body>
+
+  <div class="pl" role="status" aria-label="Завантаження портфоліо">
+    <canvas class="pl__canvas"></canvas>
+
+    <div class="pl__fallback"><div class="pl__fb-stage"></div></div>
+
+    <div class="pl__vignette"></div>
+
+    <div class="pl__meta">
+      <span class="pl__counter"><b>01</b> <span>/</span> <i>06</i></span>
+      <span class="pl__title"></span>
+    </div>
+    <div class="pl__progress"><i></i></div>
+
+    <div class="pl__brand">
+      <div class="pl__logo" role="img" aria-label="Логотип агенції"></div>
+      <p class="pl__tagline">Digital experiences<br>that move brands forward.</p>
+    </div>
+
+    <div class="pl__grain"></div>
+  </div>
 
   <section class="dd-hero">
     <div class="dd-container">
@@ -198,6 +233,7 @@
   <script src="js/leads-config.js"></script>
   <script src="js/lead-modal.js"></script>
   <script src="js/main.js"></script>
+  <script type="module" src="js/preloader.js"></script>
 
 </body>
 </html>

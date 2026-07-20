@@ -58,13 +58,26 @@ function initSplit() {
   });
 }
 
+/* Hero-анімація стартує лише після завершення прелоадера.
+   Якщо прелоадера немає (він уже показувався в цій сесії),
+   подія все одно надсилається — сценарій єдиний. */
+function whenPreloaderDone(fn) {
+  if (!document.documentElement.classList.contains("pl-active")) {
+    fn();
+    return;
+  }
+  document.addEventListener("preloader:complete", fn, { once: true });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
 
-  // Split after fonts load so line breaks are measured correctly
+  // Split after fonts load so line breaks are measured correctly,
+  // and only once the preloader has handed the page over
+  const startSplit = () => whenPreloaderDone(initSplit);
   if (document.fonts) {
-    document.fonts.ready.then(initSplit);
+    document.fonts.ready.then(startSplit);
   } else {
-    window.addEventListener("load", initSplit);
+    window.addEventListener("load", startSplit);
   }
 
   /* ============ CTA section reveal ============ */
