@@ -1,19 +1,17 @@
-/* ============ Lead modal: open/close + form submit ============ */
+/* ============ Lead modal: open/close + Telegram submit ============ */
 
 (function () {
-  // Форма надсилається на email через FormSubmit (formsubmit.co).
-  // Перший лист попросить підтвердити адресу — після підтвердження
-  // заявки приходитимуть на пошту.
-  const FORM_ENDPOINT = "https://formsubmit.co/ajax/guraldesign@gmail.com";
+  const cfg = window.LEADS_CONFIG || {};
 
   const modal = document.getElementById("lead-modal");
   const openBtn = document.getElementById("lead-open");
   const form = document.getElementById("lead-form");
   if (!modal || !openBtn || !form) return;
 
-  const card = modal.querySelector(".dd-modal__card");
   const status = modal.querySelector(".dd-modal__status");
   let lastFocused = null;
+
+  /* ---------- open / close ---------- */
 
   function openModal() {
     lastFocused = document.activeElement;
@@ -44,8 +42,86 @@
     el.addEventListener("click", closeModal)
   );
 
+  /* ---------- Telegram message ---------- */
+
+  // Екрануємо все, що вводить користувач: parse_mode=HTML інакше зламається
+  const esc = s =>
+    String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+  function buildMessage(lead) {
+    const site = cfg.siteName || location.hostname || "портфоліо";
+    const when = new Date().toLocaleString("uk-UA", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+      timeZone: "Europe/Kyiv"
+    });
+
+    const lines = [
+      "🟢 <b>НОВА ЗАЯВКА З САЙТУ</b>",
+      "🌐 Портфоліо · <b>" + esc(site) + "</b>",
+      "━━━━━━━━━━━━━━━━━━━━",
+      "",
+      "👤 <b>Ім'я</b>",
+      esc(lead.name),
+      "",
+      "📞 <b>Контакт</b>",
+      esc(lead.contact)
+    ];
+
+    if (lead.message) {
+      lines.push("", "💬 <b>Про проєкт</b>", esc(lead.message));
+    }
+
+    lines.push(
+      "",
+      "━━━━━━━━━━━━━━━━━━━━",
+      "🕒 " + esc(when) + " (Київ)",
+      "🔗 <a href=\"" + esc(lead.page) + "\">Сторінка заявки</a>"
+    );
+
+    return lines.join("\n");
+  }
+
+  async function sendLead(lead) {
+    const text = buildMessage(lead);
+
+    // Варіант A: через Edge Function (токен на сервері)
+    if (cfg.proxyUrl) {
+      const res = await fetch(cfg.proxyUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...lead, text })
+      });
+      if (!res.ok) throw new Error("proxy HTTP " + res.status);
+      return;
+    }
+
+    // Варіант B: напряму в Telegram Bot API
+    if (!cfg.botToken || !cfg.chatId) throw new Error("Telegram не налаштований.");
+    const res = await fetch("https://api.telegram.org/bot" + cfg.botToken + "/sendMessage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: cfg.chatId,
+        text,
+        parse_mode: "HTML",
+        disable_web_page_preview: true
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) throw new Error(data.description || "HTTP " + res.status);
+  }
+
+  /* ---------- submit ---------- */
+
+  let sending = false;
+
   form.addEventListener("submit", async e => {
     e.preventDefault();
+    if (sending) return;
 
     const name = form.elements.name.value.trim();
     const contact = form.elements.contact.value.trim();
@@ -55,29 +131,30 @@
       return;
     }
 
+    sending = true;
     const submitBtn = form.querySelector(".dd-modal__submit");
     submitBtn.disabled = true;
     status.classList.remove("is-error");
     status.textContent = "Надсилаємо…";
 
     try {
-      const res = await fetch(FORM_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({
-          name,
-          contact,
-          message: form.elements.message.value.trim(),
-          _subject: "Нова заявка з сайту-портфоліо"
-        })
+      await sendLead({
+        name,
+        contact,
+        message: form.elements.message.value.trim(),
+        page: location.href
       });
-      if (!res.ok) throw new Error("HTTP " + res.status);
       status.textContent = "Дякуємо! Заявку надіслано — ми на зв'язку.";
       form.reset();
+      setTimeout(() => {
+        if (!modal.hidden) closeModal();
+        status.textContent = "";
+      }, 2500);
     } catch (err) {
       status.classList.add("is-error");
       status.textContent = "Не вдалося надіслати. Напишіть нам у Telegram, будь ласка.";
     } finally {
+      sending = false;
       submitBtn.disabled = false;
     }
   });
