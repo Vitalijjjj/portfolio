@@ -5,20 +5,31 @@
    конструкцію — центральна вертикальна, нижня горизонтальна,
    верхня, що нависає. На них демонструються скриншоти кейсів.
 
-   Модулі: CASES → loadTextures → buildScene → buildTimeline → cleanup
+   Модулі: resolveCases → loadTextures → buildScene → buildTimeline → cleanup
    ============================================================ */
 
 import * as THREE from "./vendor/three.module.min.js";
 
 /* ------------------------------------------------------------
-   1. Конфігурація кейсів
-   Щоб додати власні скриншоти — покладіть файли в assets/cases/
-   і вкажіть шляхи тут. `secondary` необов'язковий: якщо його
-   немає, на бічних площинах показується кадрований фрагмент
-   основного зображення.
+   1. Кейси для прелоадера
+
+   Беремо перші CASE_COUNT опублікованих кейсів із того самого
+   джерела, що й сайт (CasesService → Supabase). Якщо база не
+   відповідає за відведений час — показуємо статичний список нижче,
+   щоб прелоадер ніколи не залежав від мережі.
    ------------------------------------------------------------ */
 
-const CASES = [
+const CASE_COUNT = 3;
+
+/* Скільки чекаємо на список кейсів, перш ніж узяти запасний */
+const CASES_TIMEOUT = 1200;
+
+/* Ширина, до якої стискаємо скриншоти для текстур.
+   Оригінали в сторіджі важать 3–7 МБ — для площини 3×3 юніти це
+   надлишок, а прелоадер стартує лише після завантаження всіх текстур. */
+const TEXTURE_WIDTH = 1400;
+
+const FALLBACK_CASES = [
   {
     title: "Fuhrmannsoft",
     desktop: "images/fuh-poster.jpg",
@@ -33,33 +44,19 @@ const CASES = [
     title: "European Granite",
     desktop: "images/689711523762f2f611246672_granite-image.webp",
     secondary: null
-  },
-  {
-    title: "Bruit Brothers",
-    desktop: "images/68971152916faa50ee175c3e_bruit-image.webp",
-    secondary: null
-  },
-  {
-    title: "Beyond XP",
-    desktop: "images/68971152ce3c415a9cd461b2_beyond-image.webp",
-    secondary: null
-  },
-  {
-    title: "Designer Diary",
-    desktop: "images/68deef74c00b66148e78481a_dd-cover.png",
-    secondary: null
   }
 ];
 
 const SESSION_KEY = "dd-preloader-shown";
 
-/* Тривалості (с) — сумарно ≈ 6.5–7 с на десктопі, ≈ 5.5 с на мобільному */
+/* Тривалості (с) — сумарно ≈ 3.9 с на 3 кейси */
 const T = {
-  assemble: 0.95,
-  perCase: 0.62,
-  collapse: 1.1,
-  hold: 0.35,
-  reveal: 0.8
+  assemble: 0.70,
+  perCase: 0.52,
+  collapse: 0.80,
+  logo: 0.52,
+  hold: 0.18,
+  reveal: 0.62
 };
 
 /* ------------------------------------------------------------
@@ -86,7 +83,56 @@ const lowPower =
   (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4 && isMobile) ||
   (navigator.deviceMemory && navigator.deviceMemory <= 2);
 
-const activeCases = CASES.slice(0, isMobile ? 4 : CASES.length);
+/* Заповнюється в boot() перед стартом анімації */
+let activeCases = FALLBACK_CASES.slice(0, CASE_COUNT);
+
+/* ------------------------------------------------------------
+   3a. Джерело кейсів
+   ------------------------------------------------------------ */
+
+/* Supabase Storage вміє віддавати стиснений варіант через
+   render-ендпоінт. Якщо URL не з сторіджу — лишаємо як є. */
+const OBJECT_PATH = "/storage/v1/object/public/";
+
+function toThumb(url) {
+  if (typeof url !== "string") return null;
+  const at = url.indexOf(OBJECT_PATH);
+  if (at === -1) return url;
+  return (
+    url.slice(0, at) +
+    "/storage/v1/render/image/public/" +
+    url.slice(at + OBJECT_PATH.length) +
+    "?width=" + TEXTURE_WIDTH + "&quality=72"
+  );
+}
+
+/* Повертає перші CASE_COUNT кейсів сайту; за будь-якої проблеми — запасні */
+function resolveCases() {
+  const svc = window.CasesService;
+  if (!svc || typeof svc.listPublished !== "function") {
+    return Promise.resolve(FALLBACK_CASES.slice(0, CASE_COUNT));
+  }
+
+  const request = Promise.resolve()
+    .then(() => svc.listPublished())
+    .catch(() => null);
+  const timeout = new Promise(resolve => setTimeout(() => resolve(null), CASES_TIMEOUT));
+
+  return Promise.race([request, timeout]).then(list => {
+    const usable = (list || [])
+      .filter(c => c && c.imageUrl)
+      .slice(0, CASE_COUNT)
+      .map(c => ({
+        title: c.title,
+        desktop: toThumb(c.imageUrl),
+        // якщо стиснений варіант недоступний — беремо оригінал
+        desktopFull: c.imageUrl,
+        secondary: null
+      }));
+
+    return usable.length ? usable : FALLBACK_CASES.slice(0, CASE_COUNT);
+  });
+}
 
 /* ------------------------------------------------------------
    3. Завершення: віддаємо сторінку користувачу
@@ -134,8 +180,12 @@ function loadTextures(renderer, list) {
   const loader = new THREE.TextureLoader();
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
 
-  const one = url =>
+  const one = (url, fallbackUrl) =>
     new Promise(resolve => {
+      if (!url) {
+        resolve(null);
+        return;
+      }
       loader.load(
         url,
         tex => {
@@ -147,14 +197,18 @@ function loadTextures(renderer, list) {
           resolve(tex);
         },
         undefined,
-        () => resolve(null) // не валимо прелоадер через одне зображення
+        () => {
+          // стиснений варіант не віддався — пробуємо оригінал, потім здаємось
+          if (fallbackUrl && fallbackUrl !== url) resolve(one(fallbackUrl, null));
+          else resolve(null); // не валимо прелоадер через одне зображення
+        }
       );
     });
 
   return Promise.all(
     list.map(async c => ({
       title: c.title,
-      main: await one(c.desktop),
+      main: await one(c.desktop, c.desktopFull),
       secondary: c.secondary ? await one(c.secondary) : null
     }))
   );
@@ -586,14 +640,14 @@ function buildTimeline(ctx, textures) {
   tl.set(".pl__brand", { opacity: 1 }, logoAt)
     .fromTo(".pl__logo",
       { opacity: 0, scale: 0.94, filter: "blur(10px)" },
-      { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.75, ease: "power2.out" }, logoAt)
+      { opacity: 1, scale: 1, filter: "blur(0px)", duration: T.logo, ease: "power2.out" }, logoAt)
     .fromTo(".pl__tagline",
       { opacity: 0, clipPath: "inset(0 0 100% 0)" },
-      { opacity: 1, clipPath: "inset(0 0 0% 0)", duration: 0.6, ease: "power2.out" }, logoAt + 0.22);
+      { opacity: 1, clipPath: "inset(0 0 0% 0)", duration: T.logo * 0.8, ease: "power2.out" }, logoAt + 0.18);
 
   /* ---- Етап 4: відкриття сайту ---- */
 
-  const revealAt = logoAt + 0.75 + T.hold;
+  const revealAt = logoAt + T.logo + T.hold;
 
   tl.to(".pl__logo", { scale: 1.06, duration: T.reveal, ease: "power2.in" }, revealAt)
     .to(".pl__tagline", { opacity: 0, duration: 0.3 }, revealAt)
@@ -619,7 +673,8 @@ function runFallback() {
   root.classList.add("pl--fallback");
 
   const stage = root.querySelector(".pl__fb-stage");
-  const list = activeCases.slice(0, 4);
+  const list = activeCases.slice(0, CASE_COUNT);
+  const step = 0.55;
 
   const cards = list.map((c, i) => {
     const el = document.createElement("div");
@@ -635,20 +690,20 @@ function runFallback() {
   });
 
   cards.forEach((card, i) => {
-    tl.to(card, { opacity: 1, duration: 0.45, ease: "power2.out" }, i * 0.7)
-      .to(card, { opacity: 0, duration: 0.4 }, i * 0.7 + 0.7);
+    tl.to(card, { opacity: 1, duration: 0.35, ease: "power2.out" }, i * step)
+      .to(card, { opacity: 0, duration: 0.3 }, i * step + step);
   });
 
-  const end = cards.length * 0.7;
+  const end = cards.length * step;
   tl.to(".pl__meta", { opacity: 0, duration: 0.3 }, end)
     .set(".pl__brand", { opacity: 1 }, end)
     .fromTo(".pl__logo",
       { opacity: 0, scale: 0.94, filter: "blur(8px)" },
-      { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.7, ease: "power2.out" }, end)
+      { opacity: 1, scale: 1, filter: "blur(0px)", duration: T.logo, ease: "power2.out" }, end)
     .to(root, {
-      yPercent: -100, duration: 0.8, ease: "power3.inOut",
+      yPercent: -100, duration: T.reveal, ease: "power3.inOut",
       onStart: () => html.classList.add("pl-revealing")
-    }, end + 1.1);
+    }, end + T.logo + T.hold);
 
   // У fallback логотип лягає на світлий фон
   root.querySelector(".pl__logo").style.backgroundColor = "#000";
@@ -699,6 +754,14 @@ function boot() {
     return;
   }
 
+  // Кейси тягнемо з того самого джерела, що й сайт; далі — як було
+  resolveCases().then(list => {
+    activeCases = list;
+    run();
+  });
+}
+
+function run() {
   if (!hasWebGL() || lowPower) {
     runFallback();
     return;
