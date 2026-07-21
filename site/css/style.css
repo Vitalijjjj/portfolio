@@ -642,8 +642,8 @@ img {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 8.75rem;
-  height: 8.75rem;
+  width: 5.5rem;
+  height: 5.5rem;
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.18);
   -webkit-backdrop-filter: blur(10px);
@@ -662,8 +662,8 @@ img {
 }
 
 .project-card__arrow svg {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 1.625rem;
+  height: 1.625rem;
 }
 
 .project-card__content {
