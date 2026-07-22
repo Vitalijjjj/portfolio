@@ -113,6 +113,69 @@
   let index = 0;
   const startedAt = Date.now();
 
+  /* ---- Прогресивний запис у Google-таблицю ---- */
+  const SESSION_ID = (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : "s-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+  const startedAtISO = new Date().toISOString();
+  const STATUS_PARTIAL = "В процесі";
+  const STATUS_DONE = "Завершено";
+  const CONTACT_KEYS = ["name", "phone", "telegram", "business"];
+  let finished = false;
+  let lastSent = "";
+  let trackTimer = null;
+
+  function currentRecord(status) {
+    const rec = { session: SESSION_ID, startedAt: startedAtISO, status: status };
+    STEPS.forEach(s => {
+      const val = formatAnswer(s);
+      if (val) rec[s.key] = val;
+    });
+    return rec;
+  }
+
+  function hasAnyAnswer(rec) {
+    return Object.keys(rec).some(k => k !== "session" && k !== "startedAt" && k !== "status");
+  }
+
+  // status: STATUS_PARTIAL | STATUS_DONE; useBeacon — під час закриття вкладки
+  function track(status, useBeacon) {
+    if (finished && status !== STATUS_DONE) return; // не перетираємо «Завершено»
+    const rec = currentRecord(status);
+    if (!hasAnyAnswer(rec) && status !== STATUS_DONE) return; // порожнє не шлемо
+    const body = JSON.stringify(rec);
+    if (body === lastSent && !useBeacon) return; // без змін — не дублюємо
+    lastSent = body;
+    try {
+      if (useBeacon && navigator.sendBeacon) {
+        navigator.sendBeacon("/api/track", new Blob([body], { type: "application/json" }));
+        return;
+      }
+      fetch("/api/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: body,
+        keepalive: true
+      }).catch(() => { });
+    } catch (e) { /* мовчки — автозбереження не має ламати квіз */ }
+  }
+
+  function scheduleTrack() {
+    clearTimeout(trackTimer);
+    trackTimer = setTimeout(() => track(STATUS_PARTIAL, false), 700);
+  }
+
+  function flushTrack() {
+    clearTimeout(trackTimer);
+    track(STATUS_PARTIAL, false);
+  }
+
+  // Закриття / згортання вкладки — зберігаємо останній стан «маячком»
+  window.addEventListener("pagehide", () => track(STATUS_PARTIAL, true));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") track(STATUS_PARTIAL, true);
+  });
+
   /* ---- Елементи ---- */
   const stage = document.getElementById("stage");
   const nextBtn = document.getElementById("next");
@@ -344,6 +407,8 @@
     const last = index === STEPS.length - 1;
     nextBtn.querySelector("span").textContent = last ? "Надіслати" : "Далі";
     nextBtn.disabled = !canProceed(step);
+
+    scheduleTrack(); // автозбереження змін (debounce)
   }
 
   let advancing = false;
@@ -369,6 +434,7 @@
   function goNext() {
     const step = STEPS[index];
     if (!canProceed(step)) { nudge(); return; }
+    flushTrack(); // кожну завершену відповідь пишемо одразу
     if (index === STEPS.length - 1) { submit(); return; }
     transition(1, () => { index++; });
   }
@@ -388,6 +454,9 @@
   /* ---- Надсилання ---- */
   async function submit() {
     if (hp.value) { showDone(); return; } // бот
+
+    // Позначаємо запис у таблиці як завершений (одразу, до Telegram)
+    track(STATUS_DONE, false);
 
     const payload = {
       website: hp.value,
@@ -449,6 +518,7 @@
   }
 
   function showDone() {
+    finished = true;
     document.getElementById("quiz").style.display = "none";
     doneScreen.hidden = false;
   }
