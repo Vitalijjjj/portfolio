@@ -8,7 +8,7 @@
 
   /* ---- Питання ---- */
   // type: "text" | "textarea" | "tel" | "choice" | "rating"
-  // required: true — не пропустити крок без відповіді
+  // Усі кроки обовʼязкові — пропустити не можна.
   const STEPS = [
     {
       key: "likes",
@@ -55,6 +55,12 @@
       type: "textarea",
       q: "Чому ви слідкуєте за мною?",
       placeholder: "Що вас тримає у підписці"
+    },
+    {
+      key: "collab_offer",
+      type: "textarea",
+      q: "Що треба вам запропонувати, щоб ви 100% погодились на співпрацю?",
+      placeholder: "Що стало б вирішальним аргументом"
     },
     {
       key: "seen_offer",
@@ -154,11 +160,57 @@
     focusFirst(el, step);
   }
 
+  /* ---- Маска телефону: +380 XX XXX XX XX ---- */
+  function phoneNational(raw) {
+    let d = String(raw || "").replace(/\D/g, "");
+    if (d.startsWith("380")) d = d.slice(3);
+    else if (d.startsWith("0")) d = d.slice(1);
+    return d.slice(0, 9);
+  }
+  function formatUAPhone(raw) {
+    const d = phoneNational(raw);
+    let out = "+380";
+    if (d.length) out += " " + d.slice(0, 2);
+    if (d.length > 2) out += " " + d.slice(2, 5);
+    if (d.length > 5) out += " " + d.slice(5, 7);
+    if (d.length > 7) out += " " + d.slice(7, 9);
+    else if (!d.length) out += " "; // тримаємо префікс як «підлогу»
+    return out;
+  }
+  function phoneComplete(raw) {
+    return phoneNational(raw).length === 9;
+  }
+
   function buildControl(step) {
-    if (step.type === "text" || step.type === "tel" || step.type === "textarea") {
+    if (step.type === "tel") {
+      const input = document.createElement("input");
+      input.className = "field";
+      input.type = "tel";
+      input.inputMode = "tel";
+      input.autocomplete = "tel";
+      input.placeholder = step.placeholder || "";
+      input.value = answers[step.key] ? formatUAPhone(answers[step.key]) : "";
+      const apply = () => {
+        const f = formatUAPhone(input.value);
+        input.value = f;
+        try { input.setSelectionRange(f.length, f.length); } catch (e) { }
+        answers[step.key] = f;
+        syncUI();
+      };
+      input.addEventListener("focus", () => {
+        if (!input.value) { input.value = "+380 "; answers[step.key] = "+380 "; try { input.setSelectionRange(5, 5); } catch (e) { } }
+      });
+      input.addEventListener("input", apply);
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter") { e.preventDefault(); goNext(); }
+      });
+      return input;
+    }
+
+    if (step.type === "text" || step.type === "textarea") {
       const input = document.createElement(step.type === "textarea" ? "textarea" : "input");
       input.className = "field";
-      if (step.type !== "textarea") input.type = step.type === "tel" ? "tel" : "text";
+      if (step.type !== "textarea") input.type = "text";
       input.placeholder = step.placeholder || "";
       if (step.autocomplete) input.autocomplete = step.autocomplete;
       input.value = answers[step.key] || "";
@@ -266,6 +318,7 @@
   function isAnswered(step) {
     const v = answers[step.key];
     if (step.type === "rating") return v != null;
+    if (step.type === "tel") return phoneComplete(v);
     if (step.type === "choice") {
       if (!v) return false;
       const opt = step.options.find(o => (typeof o === "object" ? o.label : o) === v);
@@ -275,8 +328,9 @@
     return typeof v === "string" && v.length > 0;
   }
 
+  // Усі кроки обовʼязкові — пропустити не можна.
   function canProceed(step) {
-    return step.required ? isAnswered(step) : true;
+    return isAnswered(step);
   }
 
   function syncUI() {
@@ -288,14 +342,14 @@
     backBtn.hidden = index === 0;
 
     const last = index === STEPS.length - 1;
-    nextBtn.querySelector("span").textContent = last ? "Надіслати" : (step.required ? "Далі" : (isAnswered(step) ? "Далі" : "Пропустити"));
+    nextBtn.querySelector("span").textContent = last ? "Надіслати" : "Далі";
     nextBtn.disabled = !canProceed(step);
   }
 
   let advancing = false;
   function autoAdvance() {
     // для rating / choice — плавно перейти далі
-    if (STEPS[index].required && !isAnswered(STEPS[index])) return;
+    if (!isAnswered(STEPS[index])) return;
     if (advancing) return;
     advancing = true;
     setTimeout(() => { advancing = false; goNext(); }, 320);
