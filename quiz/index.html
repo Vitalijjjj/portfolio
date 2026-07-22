@@ -12,6 +12,14 @@
   <link rel="stylesheet" href="quiz.css">
 </head>
 <body>
+
+  <!-- Прелоадер: чорна рамка з відсотком + шкала завантаження -->
+  <div class="ql" id="ql" role="status" aria-label="Завантаження">
+    <div class="ql__frame"><span class="ql__pct">0%</span></div>
+    <div class="ql__bar"><i class="ql__fill"></i></div>
+    <div class="ql__label">Завантаження</div>
+  </div>
+
   <main class="quiz" id="quiz" aria-live="polite">
 
     <header class="quiz__top">
@@ -53,6 +61,51 @@
       <p id="done-text">Ваші відповіді надіслано. Це справді допоможе зробити контент кращим 🙏</p>
     </div>
   </div>
+
+  <script>
+    // Прелоадер: анімуємо шкалу, фініш — коли готові шрифти (з мін. часом показу)
+    (function () {
+      var ql = document.getElementById("ql");
+      if (!ql) return;
+      var fill = ql.querySelector(".ql__fill");
+      var pct = ql.querySelector(".ql__pct");
+      var start = Date.now(), value = 0, done = false, tick;
+
+      function paint(v) {
+        var r = Math.round(v);
+        fill.style.width = r + "%";
+        pct.textContent = r + "%";
+      }
+      tick = setInterval(function () {
+        value += (90 - value) * 0.08 + 0.5;
+        if (value > 90) value = 90;
+        paint(value);
+      }, 30);
+
+      function finish() {
+        if (done) return; done = true;
+        clearInterval(tick);
+        var t = setInterval(function () {
+          value += (100 - value) * 0.35 + 2;
+          if (value >= 100) { value = 100; paint(100); clearInterval(t); hide(); }
+          else paint(value);
+        }, 20);
+      }
+      function hide() {
+        setTimeout(function () {
+          ql.classList.add("is-hidden");
+          setTimeout(function () { if (ql.parentNode) ql.parentNode.removeChild(ql); }, 450);
+        }, 220);
+      }
+      function ready() {
+        setTimeout(finish, Math.max(0, 900 - (Date.now() - start)));
+      }
+
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(ready);
+      else window.addEventListener("load", ready);
+      setTimeout(ready, 2500); // страховка — ніколи не зависаємо
+    })();
+  </script>
 
   <script src="quiz.js" defer></script>
 </body>
