@@ -15,7 +15,10 @@
 
   <!-- Прелоадер: чорна рамка з відсотком + шкала завантаження -->
   <div class="ql" id="ql" role="status" aria-label="Завантаження">
-    <div class="ql__frame"><span class="ql__pct">0%</span></div>
+    <div class="ql__frame">
+      <video class="ql__video" src="media/preloader.mp4" poster="media/preloader-poster.jpg"
+             autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
+    </div>
     <div class="ql__bar"><i class="ql__fill"></i></div>
     <div class="ql__label">Завантаження</div>
   </div>
@@ -68,13 +71,10 @@
       var ql = document.getElementById("ql");
       if (!ql) return;
       var fill = ql.querySelector(".ql__fill");
-      var pct = ql.querySelector(".ql__pct");
       var start = Date.now(), value = 0, done = false, tick;
 
       function paint(v) {
-        var r = Math.round(v);
-        fill.style.width = r + "%";
-        pct.textContent = r + "%";
+        fill.style.width = Math.round(v) + "%";
       }
       tick = setInterval(function () {
         value += (90 - value) * 0.08 + 0.5;
