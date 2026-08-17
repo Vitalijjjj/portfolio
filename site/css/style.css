@@ -1218,3 +1218,51 @@ img {
     display: none;
   }
 }
+
+/* ============ Заглушка для категорій без кейсів ============ */
+.works-soon {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.5rem;
+  padding: 1rem 0 2rem;
+}
+
+.works-soon__media {
+  width: 100%;
+  max-width: 26rem;
+  aspect-ratio: 1280 / 864;
+  object-fit: cover;
+  display: block;
+  background-color: var(--colors--gray-smoke);
+}
+
+.works-soon__text {
+  max-width: 34rem;
+  line-height: 1.5;
+  color: var(--colors--gray);
+}
+
+.works-soon__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 3.25rem;
+  padding: 0 1.75rem;
+  font-weight: 500;
+  color: var(--colors--white);
+  background-color: var(--colors--black);
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+@media (hover: hover) {
+  .works-soon__btn:hover { opacity: 0.7; }
+}
+
+.works-soon__btn:focus-visible {
+  outline: 2px solid var(--colors--black);
+  outline-offset: 2px;
+}

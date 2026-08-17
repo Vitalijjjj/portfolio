@@ -144,6 +144,49 @@
     return card;
   }
 
+  // Заглушка для категорій, у які ще не додали кейси
+  function createSoonBlock() {
+    const box = document.createElement("div");
+    box.className = "works-soon";
+
+    const video = document.createElement("video");
+    video.className = "works-soon__media";
+    video.src = "media/coming-soon.mp4";
+    video.poster = "media/coming-soon-poster.jpg";
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("aria-hidden", "true");
+    if (!reducedMotion) {
+      video.autoplay = true;
+      const play = () => { const r = video.play(); if (r && r.catch) r.catch(() => {}); };
+      video.addEventListener("canplay", play, { once: true });
+      play();
+    } else {
+      video.controls = true;
+    }
+
+    const text = document.createElement("p");
+    text.className = "works-soon__text";
+    text.textContent =
+      "Ми поки займаємось наповненням — найближчим часом додамо кейси. " +
+      "Або напишіть у Telegram, і ми одразу надішлемо посилання.";
+
+    const link = document.createElement("a");
+    link.className = "works-soon__btn";
+    link.href = "https://telegram.me/guraldigital/";
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = "Написати в Telegram";
+
+    box.appendChild(video);
+    box.appendChild(text);
+    box.appendChild(link);
+    return box;
+  }
+
   // Єдине джерело даних: фільтр за категорією і статусом, сортування за orderIndex
   function casesFor(category) {
     return (allCases || [])
@@ -162,10 +205,7 @@
 
     const cases = casesFor(category);
     if (!cases.length) {
-      const empty = document.createElement("p");
-      empty.className = "featured-works__empty";
-      empty.textContent = "У цій категорії поки немає кейсів.";
-      grid.appendChild(empty);
+      grid.appendChild(createSoonBlock());
       return;
     }
 
